@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comandos, Algoritmos e Repetições — Computação e Prototipação</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #05080A;
+    --paper: #060C08;
+    --grid-line: #17281B;
+    --ink: #B9F3C6;
+    --ink-soft: #6FAE82;
+    --teal: #33FF6E;
+    --teal-dark: #1FB259;
+    --coral: #FF5C5C;
+    --amber: #E8B94B;
+    --panel-bg: #0D1310;
+    --editor-bg: #060A07;
+    --editor-text: #8FE3A8;
+    --editor-accent: #33FF6E;
+    --border: #1E3626;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  button { touch-action: manipulation; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    position: relative;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.025) 0px,
+      rgba(255,255,255,0.025) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    z-index: 999;
+  }
+
+  .app {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 24px 48px;
+  }
+
+  header.top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 4px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  header.top .title-block {
+    max-width: 620px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  header.top h1 {
+    font-family: 'VT323', monospace;
+    font-weight: 400;
+    font-size: 44px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin: 0;
+    color: var(--teal);
+    text-shadow: 0 0 10px rgba(51, 255, 110, 0.35);
+  }
+
+  header.top .byline {
+    margin: 10px 0 14px;
+    font-family: 'VT323', monospace;
+    font-size: 24px;
+    font-weight: 400;
+    letter-spacing: 0.8px;
+    color: var(--ink-soft);
+  }
+
+  header.top .byline::after {
+    content: '_';
+    color: var(--teal);
+    animation: blink 1s step-end infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    header.top .byline::after { animation: none; }
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  header.top p {
+    margin: 0;
+    color: var(--ink-soft);
+    font-family: 'Inter', sans-serif;
+    font-size: 14.5px;
+    max-width: 440px;
+    line-height: 1.4;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 22px;
+    align-items: start;
+  }
+
+  @media (max-width: 880px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 600px) {
+    .app { padding: 20px 14px 40px; }
+
+    header.top { margin-bottom: 18px; padding-bottom: 16px; }
+    header.top h1 { font-size: 30px; letter-spacing: 1px; }
+    header.top .byline { font-size: 19px; margin: 8px 0 12px; }
+    header.top p { font-size: 13.5px; }
+
+    .panel { padding: 14px; }
+
+    .cmd-buttons { grid-template-columns: 1fr; }
+
+    textarea#code { min-height: 170px; font-size: 16px; }
+
+    .run-row { gap: 8px; }
+    .btn { flex: 1 1 auto; font-size: 13px; }
+
+    .speed-row { flex-wrap: wrap; }
+
+    .ref-grid { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+  }
+
+  .panel h2 {
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    margin: 0 0 12px;
+    color: var(--teal);
+  }
+
+  /* ---- command buttons ---- */
+  .cmd-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .cmd-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    font-weight: 500;
+    background: #101B14;
+    color: var(--teal);
+    border: 1px solid #1E3626;
+    border-radius: 8px;
+    padding: 9px 8px;
+    min-height: 42px;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.12s ease, transform 0.06s ease;
+  }
+  .cmd-btn:hover { background: #172B1D; }
+  .cmd-btn:active { transform: scale(0.97); }
+  .cmd-btn.wide { grid-column: 1 / -1; background: #1A1408; color: var(--amber); border-color: #3A2C12; }
+  .cmd-btn.wide:hover { background: #241C0C; }
+
+  textarea#code {
+    width: 100%;
+    min-height: 220px;
+    resize: vertical;
+    background: var(--editor-bg);
+    color: var(--editor-text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    tab-size: 2;
+  }
+  textarea#code:focus { outline: 2px solid var(--teal); }
+
+  .run-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 13.5px;
+    border: none;
+    border-radius: 9px;
+    padding: 10px 16px;
+    min-height: 44px;
+    cursor: pointer;
+    transition: filter 0.12s ease, transform 0.06s ease;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn.run { background: var(--teal); color: #05080A; flex: 1; }
+  .btn.run:hover { filter: brightness(1.1); }
+  .btn.clear { background: #101B14; color: var(--ink-soft); border: 1px solid #1E3626; }
+  .btn.clear:hover { background: #172B1D; }
+  .btn.reset { background: #1F0E0E; color: var(--coral); border: 1px solid #3A1A1A; }
+  .btn.reset:hover { background: #2A1313; }
+
+  .speed-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+  .speed-row input[type="range"] { flex: 1; accent-color: var(--teal); }
+  .speed-row input[type="color"] {
+    width: 36px;
+    height: 26px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px;
+    background: var(--panel-bg);
+    cursor: pointer;
+  }
+
+  .status {
+    margin-top: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    min-height: 18px;
+    color: var(--ink-soft);
+  }
+  .status.error { color: var(--coral); font-weight: 600; }
+
+  /* ---- examples ---- */
+  .examples { margin-top: 18px; }
+  .example-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 9px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+    cursor: pointer;
+    margin-bottom: 7px;
+    transition: border-color 0.12s ease, background 0.12s ease;
+  }
+  .example-btn:hover { border-color: var(--teal); background: #101B14; }
+  .example-btn .tag {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #05080A;
+    background: var(--teal);
+    border-radius: 5px;
+    padding: 1px 6px;
+    margin-right: 7px;
+    vertical-align: middle;
+  }
+
+  /* ---- canvas panel ---- */
+  .canvas-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .stage-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    max-width: 560px;
+    margin: 0 auto;
+    background-color: var(--paper);
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 20px 20px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  canvas#draw {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  #turtle {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    transform: translate(-50%, -50%);
+    transition: left 0.12s linear, top 0.12s linear, transform 0.12s linear;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15));
+    pointer-events: none;
+  }
+
+  /* ---- reference sheet ---- */
+  .ref {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+  }
+  .ref h2 {
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    margin: 0 0 10px;
+    color: var(--teal);
+  }
+  .ref-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 10px 18px;
+  }
+  .ref-item {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    font-size: 13px;
+  }
+  .ref-item code {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: var(--teal);
+    background: #101B14;
+    padding: 2px 6px;
+    border-radius: 5px;
+    white-space: nowrap;
+  }
+  .ref-item span { color: var(--ink-soft); }
+
+  .note {
+    margin-top: 16px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <div class="title-block">
+      <h1>Comandos, Algoritmos e Repetições</h1>
+      <div class="byline">Computação e Prototipação — Professor Arthur Zanfrilli</div>
+      <p>O mesmo código que vocês escreveram no papel quadriculado agora desenha na tela. Escreva os comandos e mande a tartaruga desenhar.</p>
+    </div>
+  </header>
+
+  <div class="layout">
+
+    <!-- LEFT: code panel -->
+    <div class="panel">
+      <h2>Meu código</h2>
+
+      <div class="cmd-buttons">
+        <button class="cmd-btn" data-insert="ANDAR 3\n">ANDAR [n]</button>
+        <button class="cmd-btn" data-insert="MOVER 3\n">MOVER [n]</button>
+        <button class="cmd-btn" data-insert="VIRAR DIREITA\n">VIRAR DIREITA</button>
+        <button class="cmd-btn" data-insert="VIRAR ESQUERDA\n">VIRAR ESQUERDA</button>
+        <button class="cmd-btn wide" data-insert="REPETIR 4 vezes [\n  ANDAR 3\n  VIRAR DIREITA\n]\n">REPETIR [n] vezes [ ... ]</button>
+      </div>
+
+      <textarea id="code" spellcheck="false"></textarea>
+
+      <div class="run-row">
+        <button class="btn run" id="btnRun">▶ Executar</button>
+        <button class="btn clear" id="btnClearCode">Limpar código</button>
+      </div>
+      <div class="run-row">
+        <button class="btn clear" id="btnClear">Limpar desenho</button>
+        <button class="btn reset" id="btnReset">Reiniciar tudo</button>
+      </div>
+
+      <div class="speed-row">
+        <span>Velocidade</span>
+        <input type="range" id="speed" min="1" max="10" value="6">
+        <span>rápida</span>
+      </div>
+
+      <div class="speed-row">
+        <span>Cor do caminho</span>
+            <input type="color" id="pathColor" value="#33ff6e">
+      </div>
+
+      <div class="status" id="status">Pronto. Clique em ▶ Executar quando quiser.</div>
+
+      <div class="examples">
+        <h2>Exemplos prontos</h2>
+        <button class="example-btn" data-example="quadrado"><span class="tag">1</span>Um quadrado</button>
+        <button class="example-btn" data-example="fileira"><span class="tag">2</span>Três quadrados em fileira</button>
+        <button class="example-btn" data-example="escada"><span class="tag">3</span>Escada (repetição dentro de repetição)</button>
+        <button class="example-btn" data-example="moinho"><span class="tag">4</span>Moinho de quadrados</button>
+      </div>
+    </div>
+
+    <!-- RIGHT: canvas -->
+    <div class="canvas-panel">
+      <div class="panel" style="padding-top:14px;">
+        <div class="stage-wrap" id="stageWrap">
+          <canvas id="draw" width="560" height="560"></canvas>
+          <svg id="turtle" viewBox="0 0 40 40">
+            <g>
+              <ellipse cx="20" cy="23" rx="11" ry="9" fill="#1FB259" stroke="#33FF6E" stroke-width="1.5"/>
+              <path d="M20 6 C 24 6 27 10 26 14 C 24 12 16 12 14 14 C 13 10 16 6 20 6 Z" fill="#28D866" stroke="#33FF6E" stroke-width="1.5"/>
+              <circle cx="20" cy="10.5" r="1.3" fill="#05080A"/>
+              <ellipse cx="9" cy="16" rx="3" ry="2.2" fill="#28D866" stroke="#33FF6E" stroke-width="1.2"/>
+              <ellipse cx="31" cy="16" rx="3" ry="2.2" fill="#28D866" stroke="#33FF6E" stroke-width="1.2"/>
+              <ellipse cx="12" cy="31" rx="3" ry="2.2" fill="#28D866" stroke="#33FF6E" stroke-width="1.2"/>
+              <ellipse cx="28" cy="31" rx="3" ry="2.2" fill="#28D866" stroke="#33FF6E" stroke-width="1.2"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <div class="ref">
+        <h2>Nossos comandos</h2>
+        <div class="ref-grid">
+          <div class="ref-item"><code>ANDAR n</code><span>anda n quadrados para frente, desenhando o caminho</span></div>
+          <div class="ref-item"><code>VIRAR DIREITA</code><span>gira 90° para a direita, sem se mover</span></div>
+          <div class="ref-item"><code>VIRAR ESQUERDA</code><span>gira 90° para a esquerda, sem se mover</span></div>
+          <div class="ref-item"><code>MOVER n</code><span>anda n quadrados sem desenhar</span></div>
+          <div class="ref-item"><code>REPETIR n vezes [ ... ]</code><span>executa tudo dentro dos colchetes n vezes</span></div>
+        </div>
+        <div class="note">
+          Igual no papel: um <code style="font-family:'JetBrains Mono',monospace;background:#101B14;color:var(--teal);padding:1px 5px;border-radius:4px;">REPETIR</code> pode ter outro <code style="font-family:'JetBrains Mono',monospace;background:#101B14;color:var(--teal);padding:1px 5px;border-radius:4px;">REPETIR</code> inteiro dentro dele — o de dentro roda todas as suas vezes primeiro, e só depois o de fora continua.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  const codeEl = document.getElementById('code');
+  const statusEl = document.getElementById('status');
+  const canvas = document.getElementById('draw');
+  const ctx = canvas.getContext('2d');
+  const turtleEl = document.getElementById('turtle');
+  const stageWrap = document.getElementById('stageWrap');
+  const speedEl = document.getElementById('speed');
+  const pathColorEl = document.getElementById('pathColor');
+
+  const UNIT = 20; // px per grid square at the canvas's native 560x560 resolution
+  let scale = 1;   // resize factor if stage is displayed smaller than 560
+
+  let turtle = { x: 280, y: 280, angle: 0 }; // angle: 0 = up, clockwise degrees
+  let running = false;
+
+  const EXAMPLES = {
+    quadrado: `REPETIR 4 vezes [\n  ANDAR 3\n  VIRAR DIREITA\n]`,
+    fileira: `REPETIR 3 vezes [\n  REPETIR 4 vezes [\n    ANDAR 2\n    VIRAR DIREITA\n  ]\n  MOVER 2\n]`,
+    escada: `REPETIR 5 vezes [\n  ANDAR 2\n  VIRAR DIREITA\n  ANDAR 2\n  VIRAR ESQUERDA\n]`,
+    moinho: `REPETIR 4 vezes [\n  REPETIR 4 vezes [\n    ANDAR 2\n    VIRAR DIREITA\n  ]\n  VIRAR DIREITA\n]`
+  };
+
+  codeEl.value = EXAMPLES.quadrado;
+
+  // ---------- geometry helpers ----------
+  function resizeStage(){
+    const rect = stageWrap.getBoundingClientRect();
+    scale = rect.width / 560;
+    placeTurtle();
+  }
+  window.addEventListener('resize', resizeStage);
+  window.addEventListener('orientationchange', resizeStage);
+
+  function placeTurtle(){
+    const px = turtle.x * scale;
+    const py = turtle.y * scale;
+    const size = Math.max(16, 28 * scale);
+    turtleEl.style.width = size + 'px';
+    turtleEl.style.height = size + 'px';
+    turtleEl.style.left = px + 'px';
+    turtleEl.style.top = py + 'px';
+    turtleEl.style.transform = `translate(-50%, -50%) rotate(${turtle.angle}deg)`;
+  }
+
+  function resetTurtleState(){
+    turtle = { x: 280, y: 280, angle: 0 };
+    placeTurtle();
+  }
+
+  function clearDrawing(){
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  // ---------- tokenizer + parser ----------
+  function tokenize(src){
+    const spaced = src.replace(/\[/g, ' [ ').replace(/\]/g, ' ] ');
+    return spaced.split(/\s+/).filter(t => t.length > 0 && !t.startsWith('//'));
+  }
+
+  function parse(tokens){
+    let pos = 0;
+
+    function peek(){ return tokens[pos]; }
+    function next(){ return tokens[pos++]; }
+
+    function parseBlock(stopAtBracket){
+      const nodes = [];
+      while (pos < tokens.length) {
+        const tk = peek();
+        if (tk === ']') {
+          if (stopAtBracket) return nodes;
+          throw new Error(`Encontrei um "]" sem um "[" correspondente.`);
+        }
+        nodes.push(parseCommand());
+      }
+      if (stopAtBracket) throw new Error(`Faltou fechar um REPETIR com "]".`);
+      return nodes;
+    }
+
+    function expectNumber(cmdName){
+      const tk = next();
+      if (tk === undefined) throw new Error(`Depois de "${cmdName}" era esperado um número.`);
+      const n = parseInt(tk, 10);
+      if (isNaN(n) || n <= 0) throw new Error(`Depois de "${cmdName}" era esperado um número maior que zero (recebi "${tk}").`);
+      return n;
+    }
+
+    function parseCommand(){
+      const raw = next();
+      if (raw === undefined) throw new Error('Comando incompleto no fim do código.');
+      const tk = raw.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+      if (tk === 'ANDAR' || tk === 'AVANCAR') {
+        const n = expectNumber(raw);
+        return { type: 'forward', n };
+      }
+      if (tk === 'MOVER') {
+        const n = expectNumber(raw);
+        return { type: 'move', n };
+      }
+      if (tk === 'VIRAR') {
+        const dirRaw = next();
+        if (dirRaw === undefined) throw new Error('Depois de "VIRAR" era esperado DIREITA ou ESQUERDA.');
+        const dir = dirRaw.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        if (dir === 'DIREITA') return { type: 'turn', dir: 1 };
+        if (dir === 'ESQUERDA') return { type: 'turn', dir: -1 };
+        throw new Error(`Depois de "VIRAR" era esperado DIREITA ou ESQUERDA (recebi "${dirRaw}").`);
+      }
+      if (tk === 'VD') return { type: 'turn', dir: 1 };
+      if (tk === 'VE') return { type: 'turn', dir: -1 };
+      if (tk === 'REPETIR') {
+        const n = expectNumber(raw);
+        let tk2 = peek();
+        if (tk2 && tk2.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') === 'VEZES') next();
+        const open = next();
+        if (open !== '[') throw new Error(`Depois de "REPETIR ${n} vezes" era esperado um "[" para abrir o bloco.`);
+        const body = parseBlock(true);
+        const close = next();
+        if (close !== ']') throw new Error(`O bloco do REPETIR não foi fechado com "]".`);
+        return { type: 'repeat', n, body };
+      }
+      throw new Error(`Não conheço o comando "${raw}".`);
+    }
+
+    const program = parseBlock(false);
+    return program;
+  }
+
+  // ---------- flatten AST into unit steps for smooth animation ----------
+  function flatten(nodes, steps){
+    steps = steps || [];
+    for (const node of nodes) {
+      if (node.type === 'forward' || node.type === 'move') {
+        const draw = node.type === 'forward';
+        for (let i = 0; i < node.n; i++) steps.push({ type: 'step', draw });
+      } else if (node.type === 'turn') {
+        steps.push({ type: 'turn', dir: node.dir });
+      } else if (node.type === 'repeat') {
+        for (let i = 0; i < node.n; i++) flatten(node.body, steps);
+      }
+    }
+    return steps;
+  }
+
+  // ---------- execution / animation ----------
+  function angleToVector(angleDeg){
+    const rad = angleDeg * Math.PI / 180;
+    return { dx: Math.sin(rad) * UNIT, dy: -Math.cos(rad) * UNIT };
+  }
+
+  function runSteps(steps){
+    running = true;
+    let i = 0;
+    const total = steps.length;
+    const delay = () => 260 - (parseInt(speedEl.value, 10) * 22); // ~40ms..238ms
+
+    function tick(){
+      if (i >= steps.length) {
+        running = false;
+        statusEl.classList.remove('error');
+        statusEl.textContent = `Pronto! ${total} passo${total === 1 ? '' : 's'} executado${total === 1 ? '' : 's'}.`;
+        return;
+      }
+      const s = steps[i];
+      if (s.type === 'turn') {
+        turtle.angle = (turtle.angle + 90 * s.dir + 360) % 360;
+      } else {
+        const { dx, dy } = angleToVector(turtle.angle);
+        const nx = turtle.x + dx;
+        const ny = turtle.y + dy;
+        if (s.draw) {
+          ctx.strokeStyle = pathColorEl.value;
+          ctx.lineWidth = 3;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(turtle.x, turtle.y);
+          ctx.lineTo(nx, ny);
+          ctx.stroke();
+        }
+        turtle.x = nx;
+        turtle.y = ny;
+      }
+      placeTurtle();
+      i++;
+      statusEl.classList.remove('error');
+      statusEl.textContent = `Executando passo ${i} de ${total}…`;
+      setTimeout(tick, Math.max(24, delay()));
+    }
+    tick();
+  }
+
+  function runProgram(){
+    if (running) return;
+    const src = codeEl.value;
+    let steps;
+    try {
+      const tokens = tokenize(src);
+      if (tokens.length === 0) {
+        statusEl.classList.remove('error');
+        statusEl.textContent = 'Escreva algum comando antes de executar.';
+        return;
+      }
+      const ast = parse(tokens);
+      steps = flatten(ast);
+    } catch (err) {
+      statusEl.classList.add('error');
+      statusEl.textContent = '⚠ ' + err.message;
+      return;
+    }
+    resetTurtleState();
+    clearDrawing();
+    runSteps(steps);
+  }
+
+  // ---------- UI wiring ----------
+  document.getElementById('btnRun').addEventListener('click', runProgram);
+
+  document.getElementById('btnClearCode').addEventListener('click', () => {
+    if (running) return;
+    codeEl.value = '';
+    codeEl.focus();
+    statusEl.classList.remove('error');
+    statusEl.textContent = 'Código apagado. O desenho na tela continua até você mandar limpar.';
+  });
+
+  document.getElementById('btnClear').addEventListener('click', () => {
+    if (running) return;
+    clearDrawing();
+    resetTurtleState();
+    statusEl.classList.remove('error');
+    statusEl.textContent = 'Desenho apagado. A tartaruga voltou ao centro.';
+  });
+
+  document.getElementById('btnReset').addEventListener('click', () => {
+    if (running) return;
+    clearDrawing();
+    resetTurtleState();
+    codeEl.value = '';
+    statusEl.classList.remove('error');
+    statusEl.textContent = 'Tudo reiniciado. Escreva um novo código!';
+  });
+
+  document.querySelectorAll('.cmd-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const insert = btn.getAttribute('data-insert').replace(/\\n/g, '\n');
+      const start = codeEl.selectionStart;
+      const end = codeEl.selectionEnd;
+      const before = codeEl.value.slice(0, start);
+      const after = codeEl.value.slice(end);
+      const needsNewline = before.length > 0 && !before.endsWith('\n');
+      const insertion = (needsNewline ? '\n' : '') + insert;
+      codeEl.value = before + insertion + after;
+      const cursor = start + insertion.length;
+      codeEl.focus();
+      codeEl.setSelectionRange(cursor, cursor);
+    });
+  });
+
+  document.querySelectorAll('.example-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.getAttribute('data-example');
+      codeEl.value = EXAMPLES[key];
+      statusEl.classList.remove('error');
+      statusEl.textContent = 'Exemplo carregado. Clique em ▶ Executar para ver.';
+    });
+  });
+
+  // ---------- init ----------
+  resizeStage();
+  resetTurtleState();
+})();
+</script>
+</body>
+</html>
